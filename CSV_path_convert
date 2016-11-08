@@ -1,0 +1,44 @@
+%Takes the filled in raw file path sheet and filles in the Z-score values.
+    %Inputs: raw_path starts at RadPath and goes all the way to the file
+    %name, similarly Z_path also needs to start with RadPath/. Some files
+    %have .gm2csf.nii.gz in the Z-score files when the raw files have just
+    %.nii.gz so use extension_options as a cell array of possible end
+    %string. If none use {} to leave blank. the FIRST cell of extension
+    %options is what the raw file has replaced eg: {.nii.gz, gm2csf.nii.gz}
+    
+    %Current directory must be RadPath, checking files uses relative paths
+
+function CSV_path_convert(sheet_path, raw_sheet_number, Z_sheet_number, raw_path_prefix,Z_path_prefix,extension_options)
+
+
+[~,txt_raw_sheet,full_raw_sheet]=xlsread(sheet_path,raw_sheet_number); %read spreadsheet
+
+full_z_sheet = strrep(txt_raw_sheet,raw_path_prefix,Z_path_prefix);  %takes care of folder changes
+
+
+
+%if the cell (path) changes check that a file actualy exists for
+%extensions. Also check alt extensions
+for jj = 1:numel(txt_raw_sheet)
+
+  if (exist(txt_raw_sheet{jj},'file')==2 && exist(full_z_sheet{jj},'file') ~=2) %true if raw has a valid path and Z does not
+      
+    if ~isempty(extension_options) %possible other extensions
+      disp(['checking alternate extension for: ' full_z_sheet{jj}])
+      for kk=2:length(extension_options)
+         trial_file =  strrep(full_z_sheet{jj},extension_options{1},extension_options{kk});
+         
+         if exist(trial_file,'file')==2
+             full_z_sheet{jj} = trial_file;
+         else disp(['file ' full_z_sheet{jj} ' not found'])
+         end
+      end
+    else disp(['file ' full_z_sheet{jj} ' not found'])
+    end
+ 
+  end
+end
+
+
+%write new sheet
+xlswrite(sheet_path,full_z_sheet,Z_sheet_number)
